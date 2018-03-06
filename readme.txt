@@ -2,7 +2,7 @@ Steam Discussion link: http://steamcommunity.com/app/637650/discussions/0/169266
 NexusMods link: (TBD)
 Steam Group link: (TBD)
 Reddit: https://www.reddit.com/r/FFXVPCmods/
-Discord Link: (TBD)
+Modding Discord Link: https://discord.gg/54vRRy8
 
 filedump.txt - a nice clean list of all files if you need it contained within the root of each folder
 
