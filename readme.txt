@@ -8,6 +8,9 @@ Cheat Engine:
 Steam: http://fearlessrevolution.com/viewtopic.php?f=4&t=6178
 Windows Store: http://fearlessrevolution.com/viewtopic.php?f=4&t=6215
 
+Save Editing and Cheat Engine Memory addresses (PS4 and eventually PC)
+https://docs.google.com/spreadsheets/d/1abSI4OUYEv6bCMll4PDNQikxPikoS9lLUt8TP8JUpX0/edit#gid=487807722
+
 filedump.txt - a nice clean list of all files if you need it contained within the root of each folder
 
 Changelog
