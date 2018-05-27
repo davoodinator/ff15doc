@@ -1,0 +1,10 @@
+offset          val1        val 2           point count         name
+********************************************************************
+0x4F86           0           3.5               15,680          Pants
+0x584E           3.5        10.0               13,837        Bandana
+0x6584          10.0        25.0                9,911        Bandana
+0x72B2          25.0        45.0                5,293        Bandana
+0x7FCE          45.0        65.0                3,017        Bandana
+0x8CDB          65.0        85.0                1,108        Bandana
+0x99E3          85.0       120.0                  450        Bandana
+0xA298         120.0         3.4e+38              172        Bandana
