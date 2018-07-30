@@ -6,12 +6,14 @@ import os
 
 
 
-def readString(file_h):
+def readString(file_h, count = 200):
 	aByte=file_h.read(1)
 	s=aByte
-	while aByte and ord(aByte) != 0:
+	c=0
+	while (aByte and ord(aByte) != 0) and c < count:
 		aByte=file_h.read(1)
 		s+=aByte
+		c+=1
 	string=s.rstrip("\x00")
 	return string
 
@@ -69,6 +71,8 @@ def getByteCount(type):
 		bct = 2
 	elif type == 12:
 		bct = 1
+	elif type == 13:
+		bct = 1
 	elif type == 14:
 		bct = 1
 	elif type == 16:
@@ -80,7 +84,8 @@ def getByteCount(type):
 
 
 
-def get_top_count(file_h, f_size):
+def rd_top(file_h, f_size):
+	lt = []
 	unk0 = rd(file_h)
 	unk1 = rd(file_h)
 	strlen_n = struct.unpack("B",file_h.read(1))[0] - 0xA0
@@ -91,42 +96,31 @@ def get_top_count(file_h, f_size):
 			stop = True
 			unk0 = struct.unpack("B",file_h.read(1))[0]
 			strlen0 = struct.unpack("B",file_h.read(1))[0]  # asset_uri
-			readString(file_h)                              # asset_uri
+			lt.append({"asset":readString(file_h)})         # asset_uri
 			strlen1 = struct.unpack("B",file_h.read(1))[0]  # ref
-			readString(file_h)                              # ref
+			lt.append({"ref":readString(file_h)})           # ref
 			unk1 = struct.unpack("B",file_h.read(1))[0]
-			strlen2 = struct.unpack("B",file_h.read(1))[0]  # file
-			readString(file_h)                              # file
+			strlen2 = struct.unpack("B",file_h.read(1))[0]
+			lt.append({"gmdl":readString(file_h)})          # gmdl file
 			
-			p = rd(file_h)
-	file_h.seek(0,0)
-	return p
-
-
-
-
-def rd_top(file_h, f_size):
-	lt = []
-	t_count = get_top_count(file_h, f_size)
-	unk0 = rd(file_h)
-	unk1 = rd(file_h)
-	for x in range(t_count):
-		strlen_n = struct.unpack("B",file_h.read(1))[0] - 0xA0   # & 0x1F
-		n = readString(file_h)
-		unk2 = struct.unpack("B",file_h.read(1))[0]
-		strlen_a = struct.unpack("B",file_h.read(1))[0]
-		lt.append({n:readString(file_h)})
-		if x == t_count - 1:
-			strlen_2 = struct.unpack("B",file_h.read(1))[0] - 0xA0
-			ast = readString(file_h)    # asset_uri
-			unk3 = struct.unpack("B",file_h.read(1))[0]
-			strlen_3 = struct.unpack("B",file_h.read(1))[0]
-			lt.append({ast:readString(file_h)})
-			strlen_4 = struct.unpack("B",file_h.read(1))[0] - 0xA0
-			rf = readString(file_h)     # ref
-			unk4 = struct.unpack("B",file_h.read(1))[0]
-			strlen_5 = struct.unpack("B",file_h.read(1))[0]
-			lt.append({rf:readString(file_h)})
+			
+			t = file_h.tell()
+			z0 = struct.unpack("B",file_h.read(1))[0]
+			z1 = readString(file_h, 3)
+			
+			if z1 == "src":
+				unk2 = struct.unpack("B",file_h.read(1))[0]
+				strlen3 = struct.unpack("B",file_h.read(1))[0]
+				lt.append({"src":readString(file_h)})       # gmdl file
+				u = file_h.tell()
+				p = rd(file_h)
+				lt.append({"count":p})
+				file_h.seek(u,0)
+			else:
+				file_h.seek(t,0)
+				p = rd(file_h)
+				lt.append({"count":p})
+				file_h.seek(t,0)
 	return lt
 
 
@@ -144,10 +138,10 @@ def rd_bones1(file_h):
 
 def modelHeader(file_h):
 	file_h.seek(11,1)
-	clusterName = readString(file_h)
-	count_maybe = struct.unpack("B",file_h.read(1))[0] & 0xF
+	base = readString(file_h)       #  Usually Parts_Base
+	count_maybe = rd(file_h)
 	name_size = struct.unpack("B",file_h.read(1))[0] - 0xA0
-	ClusterName_name = readString(file_h)
+	ClusterName = readString(file_h)
 	meshCount = rd(file_h)
 	return meshCount
 
@@ -157,19 +151,36 @@ def modelHeader(file_h):
 def rd_meshBegin(file_h):
 	name_size = struct.unpack("B",file_h.read(1))[0] - 0xA0
 	mesh_name = readString(file_h)
-	file_h.seek(1,1)
+	file_h.seek(1,1)  # ?
 	count = rd(file_h)
 	for j in range(count):  # cruft
 		rd(file_h)
-	file_h.seek(94,1)       # more cruft
+	
+	u0 = struct.unpack("B",file_h.read(1))[0]
+	u1 = struct.unpack("B",file_h.read(1))[0] # 0xC2
+	for j in range(6):  # more cruft
+		rd(file_h)
+	unk = struct.unpack("B",file_h.read(1))[0] # 0xC3/03
+	
+	wb = file_h.tell()
+	check = rd(file_h)
+	wba = file_h.tell() - wb
+	file_h.seek(-wba,1)
+	
+	if isinstance(check, float):  # more floats
+		for j in range(12):  # extra cruft w cheese
+			rd(file_h)
 	return mesh_name
 
 
 
 
 def rd_meshEnd(file_h):
-	unk_byte = struct.unpack("B",file_h.read(1))[0]
-	maybe_count = struct.unpack("B",file_h.read(1))[0] & 0xF
+	unk = struct.unpack("B",file_h.read(1))[0]
+	if unk != 0: file_h.seek(-1,1)
+	
+	maybe_count = struct.unpack("B",file_h.read(1))[0]
+	# maybe_count = rd(file_h)
 	
 	file_h.seek(46,1)
 	lod_0 = rd(file_h)
@@ -182,24 +193,62 @@ def rd_meshEnd(file_h):
 	count_9 = struct.unpack("B",file_h.read(1))[0]
 	count = get_unknownCount(count_9)
 	rd(file_h)
-	zero = struct.unpack("B",file_h.read(1))[0]  # 0
+	zero = struct.unpack("B",file_h.read(1))[0]
 	for t in range(count):
 		rd(file_h)
-	C2 = struct.unpack("B",file_h.read(1))[0]    # 0xC2
-	rd(file_h)
-	C3 = struct.unpack("B",file_h.read(1))[0]    # 0xC3
-	rd(file_h)
-	unk_byte = struct.unpack("B",file_h.read(1))[0]
+	
+	C2 = struct.unpack("B",file_h.read(1))[0]
+	if C2 == 0xC2:
+		rd(file_h)
+		C3 = struct.unpack("B",file_h.read(1))[0]
+		if C3 == 0xC3:
+			rd(file_h)
+			unk_byte = struct.unpack("B",file_h.read(1))[0]
+	else:
+		file_h.seek(-1,1)
 	return lod_0
 
 
 
 
+def Duscae_manHandler(file_h):
+	d = True
+	file_h.seek(160,0)
+	for x in range(112):
+		if struct.unpack("<L",file_h.read(4))[0] != 0:
+			d = False
+			break
+	return d
+
+
+
+
+def rd_xfrm_header(file_h, isDuscae):
+	ab = {}
+	ex_st = file_h.tell()
+	externalFiles_headerSize = struct.unpack("<L",file_h.read(4))[0]
+	file_h.seek(ex_st + externalFiles_headerSize, 0)
+	
+	
+	if isDuscae:
+		ab["parentID_count"] = struct.unpack("<H",file_h.read(2))[0]
+	else:
+		ab["count_0"] = struct.unpack("<L",file_h.read(4))[0]
+		ab["count_1"] = struct.unpack("<L",file_h.read(4))[0]
+		ab["xfrm_count"] = struct.unpack("<H",file_h.read(2))[0]
+		ab["parentID_count"] = struct.unpack("<H",file_h.read(2))[0]
+		if ab["parentID_count"] == 0: ab["parentID_count"] = ab["xfrm_count"]
+		unk_count = struct.unpack("<L",file_h.read(4))[0]
+		ab["start_offset"] = file_h.tell()
+	return ab
+
+
+
+
 def data_paver(start, end, count, subCount, type, data):
-	if type == 6:       # NORMAL FACTORS
+	if type == 6:       # FACTORS
 		pos = data[:,start:end].ravel().view(dtype = '<H').reshape((count, subCount))  # ?
-		positionData = pos.astype(np.float64)
-		return positionData
+		return pos
 	
 	elif type == 8:
 		pos = data[:,start:end].ravel().view(dtype = '<H').reshape((count, subCount))
@@ -211,6 +260,10 @@ def data_paver(start, end, count, subCount, type, data):
 		positionData /= 255.0
 		return positionData
 	
+	elif type == 13:
+		pos = data[:,start:end].ravel().view(dtype = 'B').reshape((count, subCount))
+		return pos
+	
 	elif type == 14:    # Vectors
 		pos = data[:,start:end].ravel().view(dtype = 'b').reshape((count, subCount))
 		positionData = pos.astype(np.float64)
@@ -220,6 +273,10 @@ def data_paver(start, end, count, subCount, type, data):
 	elif type == 16:
 		pos = data[:,start:end].ravel().view(dtype = '<f').reshape((count, subCount))
 		positionData = pos.astype(np.float64)
+		return positionData
+	
+	elif type == 20:    # COLOR
+		pos = data[:,start:end].ravel().view(dtype = '<L').reshape((count, subCount))
 		return positionData
 	
 	elif type == 26:

@@ -1,15 +1,21 @@
+#from XV_Blender import *
+
+
+import os
 import bpy
 import sys
 import math
 import time
 import struct
 import numpy as np
-from XV_read import *
 import bmesh as bmesh
 import mathutils as mu
-from XV_meshWhipper import *
-from XV_paletteKnife import *
-from XV_boneCruncher import *
+from XV_Blender.XV_read import *
+from XV_Blender.AMDL_Handler import *
+from XV_Blender.XV_meshWhipper import *
+from XV_Blender.XV_paletteKnife import *
+from XV_Blender.XV_boneCruncher import *
+
 from rna_prop_ui import rna_idprop_ui_prop_get as prop
 from bpy_extras.io_utils import unpack_list, unpack_face_list
 

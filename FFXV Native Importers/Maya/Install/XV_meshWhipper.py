@@ -49,6 +49,7 @@ class header():
 		self.byteSize     = rd(file_h)
 		self.vertexCount  = rd(file_h)
 		self.chunk_count  = struct.unpack("B",file_h.read(1))[0] & 0xF
+		#self.chunk_count = rd(file_h)
 		file_h.seek(2,1)
 	def readExtra(self, file_h):
 		self.mesh_dataStart = rd(file_h)
@@ -73,6 +74,7 @@ class m():
 		if first == True:
 			self.stride     = struct.unpack("<H",file_h.read(2))[0]
 			self.item_count = struct.unpack("<H",file_h.read(2))[0] & 0xF
+			#self.item_count = rd(file_h)
 		else:
 			self.stride = struct.unpack("B",file_h.read(1))[0]
 			self.offset = rd(file_h)

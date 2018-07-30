@@ -1,4 +1,5 @@
 import maya.api.OpenMaya as om2
+from AMDL_Handler import *
 import maya.OpenMaya as om
 import maya.cmds as cmds
 import pymel.core as pm
@@ -10,27 +11,12 @@ import io
 
 
 
-def rd_xfrm_header(file_h):
-		ab = {}
-		ex_st = file_h.tell()
-		externalFiles_headerSize = struct.unpack("<L",file_h.read(4))[0]
-		file_h.seek(ex_st + externalFiles_headerSize, 0)
-		
-		ab["count_0"] = struct.unpack("<L",file_h.read(4))[0]
-		ab["count_1"] = struct.unpack("<L",file_h.read(4))[0]
-		ab["xfrm_count"] = struct.unpack("<H",file_h.read(2))[0]
-		ab["parentID_count"] = struct.unpack("<H",file_h.read(2))[0]
-		if ab["parentID_count"] == 0: ab["parentID_count"] = ab["xfrm_count"]
-		unk_count = struct.unpack("<L",file_h.read(4))[0]
-		ab["start_offset"] = file_h.tell()
-		return ab
 
 class bone_cruncher:
 	def __init__(self):
 		self.wd = {}
 		self.bNames = []
 		self.Bones = []
-		self.relative_offsets = [112,96,80,64,48,32,16]
 		self.influence_names = set()
 	
 	
@@ -52,71 +38,55 @@ class bone_cruncher:
 	
 	
 	def make_skeleton(self, file_h):
-		file_size = struct.unpack("<L",file_h.read(4))[0]
-		unk = struct.unpack("<L",file_h.read(4))[0]
-		block2_offset = struct.unpack("<L",file_h.read(4))[0]
-		offset_flag = struct.unpack("<L",file_h.read(4))[0]
-		theOffset = self.relative_offsets[offset_flag]
+		amdl_data = AMDL_Handler(file_h)
+		amdl_data.get_stuff(file_h)
 		
-		file_h.seek(296,0)
-		self.offset_to_end_of_names = struct.unpack("<L",file_h.read(4))[0] + theOffset
+		file_h.seek(amdl_data.namesStart,0)
 		
-		file_h.seek(156,1)
-		namesOffset = struct.unpack("<L",file_h.read(4))[0] + 112
-		unk = struct.unpack("<L",file_h.read(4))[0]
-		boneCount = struct.unpack("<H",file_h.read(2))[0]
-		file_h.seek(namesOffset,0)
+		if amdl_data.isDuscae:
+			name_count = amdl_data.pCount
+		else:
+			name_count = amdl_data.boneCount
 		
-		
-		for j in range(boneCount):
+		for j in range(name_count):
 			bn = readString(file_h)
 			self.bNames.append(bn)
 			sc = len(bn) + 1
 			file_h.seek(48-sc,1)
 		
-		trans_header = rd_xfrm_header(file_h)
-		file_h.seek(trans_header["count_0"] *2, 1)    # block 1  uint16
-		file_h.seek(trans_header["count_0"] *2, 1)    # block 2  uint16
 		
-		pCount = trans_header["parentID_count"]
 		PIDs = []
-		for p in range(trans_header["count_1"]):      # block 3  uint16
+		file_h.seek(amdl_data.pids_start,0)
+		for p in range(amdl_data.pCount):
 			id = struct.unpack("<H",file_h.read(2))[0]
-			if id == 65535: continue    # excluded in parentID_count
+			if id == 65535: continue
+			if amdl_data.juryRig:
+				if id < (amdl_data.pCount - 1) and p != 0:
+					id += 1
 			PIDs.append(id)
 		
-		file_h.seek(trans_header["count_1"] *2, 1)    # block 4  uint16
-		file_h.seek(trans_header["count_1"] *2, 1)    # block 5  uint16
 		
-		file_h.seek(trans_header["count_1"] *4, 1)    # block 6  uint32
-		file_h.seek(align(file_h.tell(), 16), 0)
-		
-		file_h.seek(trans_header["count_1"] *16, 1)   # block 7  4x fp32
-		file_h.seek(align(file_h.tell(), 16), 0)
-		
-		file_h.seek(trans_header["count_1"] *16, 1)   # block 8  4x fp32
-		file_h.seek(align(file_h.tell(), 16), 0)
-		
-		
-		
-		
+		file_h.seek(amdl_data.transforms_offset,0)
 		self.mArray = []
-		for x in range(pCount):
+		for x in xrange(amdl_data.pCount):
 			self.mtx = struct.unpack("<16f",file_h.read(64))
 			
+			if x == 0 and amdl_data.juryRig == True:
+				file_h.seek(-64,1)
 			
 			mm = om2.MMatrix(self.mtx)
 			self.mArray.append(mm)
 			
 			boneName = self.bNames[x]
 			
-			if x > 0 and x < pCount:
+			if x > 0 and x < amdl_data.pCount:
 				BNparent = PIDs[x-1]
 				mi = mm.inverse()
 				mi *= self.mArray[BNparent]
 				mm = mi
 			else:
 				BNparent = 0
+			
 			
 			mt = om2.MTransformationMatrix(mm)
 			

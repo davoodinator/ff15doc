@@ -1,6 +1,6 @@
 #from XV_WeightGain4000 import *
-from XV_boneCruncher import *
-from XV_read import *
+from XV_Blender.XV_boneCruncher import *
+from XV_Blender.XV_read import *
 import numpy as np
 import string
 import struct

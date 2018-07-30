@@ -1,4 +1,4 @@
-from XV_read import *
+from XV_Blender.XV_read import *
 import string
 import struct
 
@@ -18,8 +18,12 @@ class paint:
 		for g in range(name_count):
 			name_size = struct.unpack("B",file_h.read(1))[0] - 0xA0
 			st = readString(file_h)
-			id = rd(file_h) >> 16
-			if id == 65535:
-				self.ta[g] = st
+			id = rd(file_h)
+			if id > 65535:
+				id >>= 16
+				if id == 65535:
+					self.ta[g] = st
+				else:
+					self.ta[id] = st
 			else:
-				self.ta[id] = st
+				self.ta[g] = st
