@@ -143,6 +143,7 @@ def modelHeader(file_h):
 	name_size = struct.unpack("B",file_h.read(1))[0] - 0xA0
 	ClusterName = readString(file_h)
 	meshCount = rd(file_h)
+	ghj = file_h.tell()
 	return meshCount
 
 
@@ -168,8 +169,10 @@ def rd_meshBegin(file_h):
 	file_h.seek(-wba,1)
 	
 	if isinstance(check, float):  # more floats
-		for j in range(12):  # extra cruft w cheese
+		for j in range(12):
 			rd(file_h)
+		file_h.seek(1,1)    #03
+	
 	return mesh_name
 
 
