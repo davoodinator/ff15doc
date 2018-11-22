@@ -7,5 +7,3 @@ Place everything from Install + NumPy in: C:\Program Files\Autodesk\Maya2018\Pyt
 NOTES
 
 The first time the importer is run, it can be slow to initialize.
-
-It's Python. It's slow. Single gfxbin can take 30 seconds.
