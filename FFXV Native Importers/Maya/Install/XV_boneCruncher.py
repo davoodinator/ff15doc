@@ -13,10 +13,11 @@ import io
 
 
 class bone_cruncher:
-	def __init__(self):
+	def __init__(self, model_id = ""):
 		self.wd = {}
 		self.bNames = []
 		self.Bones = []
+		self.modelID = model_id + "__"
 		self.influence_names = set()
 	
 	
@@ -34,7 +35,7 @@ class bone_cruncher:
 					
 					self.wd[x]['weights'].append(j)
 					self.wd[x]['boneNames'].append(mrBone)
-					self.influence_names.add(mrBone)
+					self.influence_names.add(mrBone.encode('ascii','ignore'))
 	
 	
 	def make_skeleton(self, file_h):
@@ -53,6 +54,8 @@ class bone_cruncher:
 			self.bNames.append(bn)
 			sc = len(bn) + 1
 			file_h.seek(48-sc,1)
+		for i in range(len(self.bNames)):
+			self.bNames[i] = self.modelID + self.bNames[i]
 		
 		
 		PIDs = []
