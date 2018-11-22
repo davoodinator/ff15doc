@@ -6,8 +6,9 @@ import struct
 
 
 class paint:
-	def __init__(self):
+	def __init__(self, grp):
 		self.ta = {}
+		self.prefix = grp + "__"
 	def read(self, file_h):
 		count = struct.unpack("B",file_h.read(1))[0] & 0xF
 		d_length = count * 9
@@ -22,8 +23,8 @@ class paint:
 			if id > 65535:
 				id >>= 16
 				if id == 65535:
-					self.ta[g] = st
+					self.ta[g] = self.prefix + st
 				else:
-					self.ta[id] = st
+					self.ta[id] = self.prefix + st
 			else:
-				self.ta[g] = st
+				self.ta[g] = self.prefix + st
