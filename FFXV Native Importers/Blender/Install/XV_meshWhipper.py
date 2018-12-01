@@ -4,6 +4,7 @@ from XV_Blender.XV_read import *
 import numpy as np
 import string
 import struct
+import bmesh
 import bpy
 import os
 
@@ -107,7 +108,7 @@ class m():
 
 
 class creator:
-	def __init__(self, file_gfx, version):
+	def __init__(self, file_gfx, version, f_name, grp):
 		self.meshObject = 0
 		self.faces = 0
 		self.bone_ids = 0
@@ -121,7 +122,10 @@ class creator:
 		
 		self.V_28 = version
 		
-		self.name = rd_meshBegin(file_gfx)
+		self.file_name = f_name
+		self.name = f_name + "__" + rd_meshBegin(file_gfx)
+		self.group_name = grp
+		
 		self.mesh_header = header(file_gfx)
 	def doTheThing(self, file_gfx):
 		self.m0 = m(file_gfx)
@@ -223,6 +227,8 @@ class creator:
 		
 		
 		
+		#old
+		'''
 		mesh = bpy.data.meshes.new(self.name)
 		mesh.vertices.add(len(self.VA))
 		mesh.tessfaces.add(len(self.faces))
@@ -230,39 +236,55 @@ class creator:
 		mesh.tessfaces.foreach_set("vertices_raw", unpack_face_list(self.faces))
 		for g in range(uv_count): mesh.tessface_uv_textures.new()
 		me_faces = mesh.tessfaces
-		
-		'''
-		for f, g in enumerate(mesh.vertices):
-			g.normal = Normal_Array[f]
 		'''
 		
-		# UVs
+		
+		mesh = bpy.data.meshes.new(self.name)
+		mesh.from_pydata(self.VA, [], self.faces)
+		if self.V_28:
+			for g in range(uv_count): mesh.uv_layers.new(name = self.name + "_TXUV" + "_0" + str(g))
+		else:
+			for g in range(uv_count): mesh.uv_textures.new(name = self.name + "_TXUV" + "_0" + str(g))
+		
+		
+		#https://blenderartists.org/t/importing-uv-coordinates/595872/5
 		UVS = 0
 		for g in range(uv_count):
 			if   g == 0: UVS = self.UVs0
 			elif g == 1: UVS = self.UVs1
 			elif g == 2: UVS = self.UVs2
 			elif g == 3: UVS = self.UVs3
-			for i, face in enumerate(self.faces):
-				idx = self.faces[i]
-				blender_tface = mesh.tessface_uv_textures[g].data[i]
-				blender_tface.uv1 = UVS[face[0]]
-				blender_tface.uv2 = UVS[face[1]]
-				blender_tface.uv3 = UVS[face[2]]
+			vi_uv = {i: uv for i, uv in enumerate(UVS)}
+			per_loop_list = [0.0] * len(mesh.loops)
+			for loop in mesh.loops:
+				per_loop_list[loop.index] = vi_uv.get(loop.vertex_index)
+			per_loop_list = [uv for pair in per_loop_list for uv in pair]
+			mesh.uv_layers[g].data.foreach_set("uv", per_loop_list)
 		
 		
 		mesh.validate()
 		mesh.update()
 		
-		
 		self.meshObject = bpy.data.objects.new(self.name, mesh)
 		
 		
+		scn_objs = get_objects(self.V_28)
 		if self.V_28:
-			bpy.context.scene.collection.objects.link(self.meshObject)
-			self.meshObject.select_set("SELECT")
+			if collectionExists(self.file_name):
+				bpy.data.collections[self.file_name].objects.link(self.meshObject)
+			else:
+				newCol = bpy.data.collections.new(self.file_name)
+				if collectionExists(self.group_name):
+					bpy.data.collections[self.group_name].children.link(newCol)
+				else:
+					bpy.context.scene.collection.children.link(newCol)
+				bpy.data.collections[self.file_name].objects.link(self.meshObject)
 		else:
 			bpy.context.scene.objects.link(self.meshObject)
+			for x in scn_objs:
+				if x.type == 'ARMATURE' and self.group_name in x.name:
+					self.meshObject.parent = x
+					break
 			self.meshObject.select = True
 		
 		mesh.polygons.foreach_set("use_smooth", [True] * len(mesh.polygons))
