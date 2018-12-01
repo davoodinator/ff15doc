@@ -3,10 +3,10 @@ import sys
 import math
 import struct
 import numpy as np
-from XV_Blender.XV_read import *
 import mathutils as mu
-from XV_Blender.AMDL_Handler import *
 from numpy.linalg import inv
+from XV_Blender.XV_read import *
+from XV_Blender.AMDL_Handler import *
 from rna_prop_ui import rna_idprop_ui_prop_get as prop
 from bpy_extras.io_utils import unpack_list, unpack_face_list
 
@@ -39,7 +39,7 @@ class bone_cruncher:
 					self.influence_names.add(mrBone)
 	
 	
-	def make_skeleton(self, file_h, sk_name):
+	def make_skeleton(self, file_h, grp):
 		amdl_data = AMDL_Handler(file_h)
 		amdl_data.get_stuff(file_h)
 		
@@ -73,21 +73,33 @@ class bone_cruncher:
 		
 		
 		
-		armName = sk_name + " Skeleton"
+		armName = grp + "_Armature"
 		armature_da = bpy.data.armatures.new(armName)
-		armature_da.draw_type = 'WIRE'
+		if self.V_28:
+			armature_da.display_type = 'STICK'
+		else:
+			armature_da.draw_type = 'WIRE'
 		self.armature_ob = bpy.data.objects.new(armName, armature_da)
+		self.armature_ob.data.name = grp + "_Armature_Data"
+		
+		
+		
 		
 		if self.V_28:
-			bpy.context.scene.collection.objects.link(self.armature_ob)
-			self.armature_ob.select_set("SELECT")
+			if collectionExists(grp):
+				bpy.data.collections[grp].objects.link(self.armature_ob)
+			else:
+				bpy.context.scene.collection.objects.link(self.armature_ob)
+			bpy.context.view_layer.objects.active = self.armature_ob
+			self.armature_ob.show_in_front = True
 		else:
 			bpy.context.scene.objects.link(self.armature_ob)
 			bpy.context.scene.objects.active = self.armature_ob
+			bpy.context.object.show_x_ray = True
 		
 		
-		bpy.context.object.show_x_ray = True
 		bpy.ops.object.mode_set(mode='EDIT')
+		
 		
 		
 		for x in range(amdl_data.pCount):
