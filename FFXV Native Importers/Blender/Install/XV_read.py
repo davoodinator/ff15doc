@@ -172,6 +172,8 @@ def rd_meshBegin(file_h):
 	if isinstance(check, float):  # more floats
 		for j in range(12):       # extra cruft w cheese
 			rd(file_h)
+		file_h.seek(1,1)
+	jk = type(mesh_name)
 	return mesh_name
 
 
@@ -288,20 +290,47 @@ def data_paver(start, end, count, subCount, type, data):
 		return positionData
 	
 	else:
-		self.report({'INFO'}, "\n\n")
-		self.report({'INFO'}, "*******************")
-		self.report({'INFO'}, "unhandled data type")
-		self.report({'INFO'}, "*******************")
-		self.report({'INFO'}, "\n\n")
+		print("\n\n")
+		print("*******************")
+		print("unhandled data type")
+		print("*******************")
+		print("\n\n")
 
 
 
 
-def get_arm(V28):
+def collectionExists(c_name):
+	for x in bpy.data.collections.items():
+		if c_name in x:
+			return True
+	return False
+
+def get_objects(version):
+	V28 = version
 	if V28:
-		objs = bpy.context.view_layer.objects
+		return bpy.context.view_layer.objects
 	else:
-		objs = bpy.context.scene.objects
+		return bpy.context.scene.objects
+
+def get_object(objs, _name):
+	for j in objs:
+		if j.name == _name:
+			return j
+
+def check_arm(objs,grp):
+	chk = True
 	for x in objs:
-		if x.type == 'ARMATURE':
+		if x.type == 'ARMATURE' and grp in x.name:
+			chk = False
+	return chk
+
+def get_arm(objs, grp):
+	for x in objs:
+		if x.type == 'ARMATURE' and grp in x.name:
 			return x
+
+def rename_arm(objs, grp):
+	for x in objs:
+		if x.type == 'ARMATURE' and grp in x.name:
+			x.name = grp + "_Armature"
+			x.data.name = grp + "_Armature_Data"

@@ -30,13 +30,8 @@ class AMDL_Handler:
 		
 		file_h.seek(156,1)
 		
-		#flag 0...which 0?
-		if self.isDuscae:
-			namesOffset = 128
-		else:
-			namesOffset = 112
 		
-		self.namesStart = struct.unpack("<L",file_h.read(4))[0] + namesOffset
+		self.namesStart = struct.unpack("<L",file_h.read(4))[0] + self.relative_offsets[0]
 		unk = struct.unpack("<L",file_h.read(4))[0]
 		
 		self.boneCount = struct.unpack("<H",file_h.read(2))[0]

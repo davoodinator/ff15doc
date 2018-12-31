@@ -112,7 +112,7 @@ class m():
 
 
 class creator:
-	def __init__(self, file_gfx):
+	def __init__(self, file_gfx, f_name):
 		self.bone_ids = 0
 		self.weights = 0
 		self.VA = 0
@@ -126,7 +126,8 @@ class creator:
 		self.uArray3 = om2.MFloatArray()
 		self.vArray3 = om2.MFloatArray()
 		
-		self.name = rd_meshBegin(file_gfx)
+		self.file_name = f_name
+		self.name = f_name + "__" + rd_meshBegin(file_gfx)
 		self.mesh_header = header(file_gfx)
 	def doTheThing(self, file_gfx):
 		self.m0 = m(file_gfx)
@@ -160,7 +161,7 @@ class creator:
 		
 		
 		
-	def FLDSMDFR(self, file_gpu):
+	def FLDSMDFR(self, file_gpu, grp):
 		file_gpu.seek(self.mesh_header.mesh_dataStart,0)
 		self.byte_count = self.mesh_header.vertexCount * self.m0.stride
 		ti_0 = np.fromfile(file_gpu, dtype = 'B', count = self.byte_count).reshape((self.mesh_header.vertexCount, self.m0.stride))
@@ -264,4 +265,13 @@ class creator:
 		
 		s1 = cmds.ls(sl=1)
 		self.s2 = s1[0]
+		
+		
+		if cmds.objExists(self.file_name):
+			cmds.parent(self.s2,self.file_name)
+		else:
+			cmds.group(em=True, name=self.file_name)
+			if cmds.objExists(grp): cmds.parent(self.file_name,grp)
+			cmds.parent(self.s2,self.file_name)
+		
 		self.shapeName = self.s2.encode('ascii','ignore')

@@ -9,8 +9,8 @@ import maya.mel as mm
 
 
 
-def weight_gain_4000(shapeName, boneArray, VertCount, weight_data, mName):
-	clusterName = shapeName + '_' + 'skinCluster'
+def weight_gain_4000(shapeName, boneArray, VertCount, weight_data, mName, grp):
+	clusterName = grp + "-" + shapeName + '_' + 'skinCluster'
 	pm.skinCluster(boneArray[:], shapeName, sm=1, mi=4, omi=1, n=clusterName)
 	
 	skin = mm.eval('findRelatedSkinCluster "'+mName+'"')
